@@ -9,6 +9,18 @@ const char* password = "12345678";
 
 ESP8266WebServer server(80);
 
+const char * userId[] =
+{
+  "0xF0",
+  "0xF1",
+  "0xF2",
+  "0xF3",
+  "0xF4",
+  "0xFA",
+  "0xFB",
+  "0xFC"
+};
+
 /* Server handler function prototypes */
 void handleRootPath();  
 void handleButtonPress();
@@ -21,15 +33,16 @@ const char * htmlMessage =
     "<title>ReachOut</title>"
     "<style>"
       "html, body {"
-        "background: linear-gradient(0deg, rgba(34,193,195,1) 0%, rgba(253,187,45,1) 100%);"
+        "background: radial-gradient(circle, rgba(238,174,202,1) 0%, rgba(148,187,233,1) 100%);"
         "width: 100%;"
         "height: 100%;"
         "margin: 0px;"
+        "border: none;"
       "}"
       ".button {"
-        "background: radial-gradient(circle, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 40%, rgba(0,212,255,1) 100%);"
+        "background: radial-gradient(circle, #a1c4fd 0%, #c2e9fb 100%);"
         "border: none;"
-        "color: white;"
+        "color: cornsilk;"
         "font-size: 30px;"
         "cursor: pointer;"
         "border-radius: 50%;"
@@ -113,10 +126,7 @@ void handleRootPath()
 
 void handleButtonPress()
 {
-  static int i = 0;
-  Serial.println(i);
-  i = i + 1;
-
+  Serial.println(userId[0]);
 
   /* Forward back to root path */
   server.sendHeader("Location", String("/"), true);
