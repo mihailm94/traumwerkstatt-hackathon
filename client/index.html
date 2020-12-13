@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <title>Traum Werkstatt</title>
+    <style type="text/css">
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #controls {
+            box-sizing: border-box;
+            height: 2em;
+            display: flex;
+            width: 17em;
+            padding: 0.3em;
+            justify-content: space-evenly;
+        }
+        #wrapper {
+            width: 100vw;
+            height: calc(100vh - 2em);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #gradient {
+            width: 88vh;
+            height: 88vh;
+            border-radius: 44vh;
+            transition: background-image 600ms ease-in-out;
+            background-image: radial-gradient(#eee, #eee);
+        }
+        #gradient.blue {
+            background-image: radial-gradient(#ADC7FA, #9997FF);
+        }
+        #gradient.green {
+            background-image: radial-gradient(#EDFFBA, #93FFCB);
+        }
+        #gradient.red {
+            background-image: radial-gradient(#DFAECB, #FF7070);
+        }
+    </style>
+</head>
+<body>
+
+This page checks field 2 (target_id) for a value, 'red', 'green', or 'blue', and transitions the circle accordingly.
+<div id="controls">
+    <button onclick="check_server()">Check server</button>
+
+    <button onclick="change_class('red')">Red</button>
+    <button onclick="change_class('green')">Green</button>
+    <button onclick="change_class('blue')">Blue</button>
+</div>
+
+<div id="wrapper">
+<div id="gradient">&nbsp;</div>
+</div>
+
+</body>
+<script type="text/javascript">
+
+    const CHANNEL_ID = 1256278;
+    const URL = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json`
+    const LAST_URL = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json`;
+    const READ_API_KEY = 'I3DZBXU4KBGHBHQ9';
+    const WRITE_API_KEY = '46F35S8XA7HPQ4DH';
+
+    let current_status;
+    let fields = {};
+
+    function change_class(className) {
+        document.querySelector('#gradient').classList = [className];
+    }
+
+    function get_fields() {
+        return new Promise((resolve, reject) => {
+            let xhr = new XMLHttpRequest();
+            let url = URL + '?api_key=' + READ_API_KEY;
+            xhr.open("GET", url);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    try {
+                        resolve(parse_fields(this.responseText));
+                    } catch(e) {
+                        reject(e);
+                    }
+                }
+            };
+            xhr.send();
+        });
+    }
+
+    function check_server() {
+        let xhr = new XMLHttpRequest();
+        let url = LAST_URL + '?api_key=' + READ_API_KEY;
+        xhr.open("GET", url);
+        xhr.onreadystatechange = function() {
+            try {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    let data = parse_data(this.responseText);
+                    console.log(data);
+                    handle_response(data);
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        };
+        xhr.send();
+    }
+
+    get_fields().then(result => {
+        fields = result;
+        setInterval(check_server, 2000);
+    })
+
+    function parse_fields(data) {
+        let {channel} = JSON.parse(data);
+        let key_pairs = Object.keys(channel)
+            .filter(x => x.includes('field'))
+            .map(x => [x, channel[x]]);
+
+        let result = {};
+        key_pairs.forEach(([key, value]) => {
+            result[key] = value;
+        });
+
+        return result;
+    }
+
+    function parse_data(data) {
+        let last_entry = JSON.parse(data);
+        let keys = Object.keys(fields);
+        let result = {};
+        keys.forEach(key => {
+            result[fields[key]] = last_entry[key];
+        });
+        result.entry_id = last_entry.entry_id;
+        return result;
+    }
+
+    function handle_response(data) {
+        console.log('Prev:', current_status, "; Next:", data.target_id);
+        if (current_status !== data.target_id) {
+            current_status = data.target_id;
+            change_class(data.target_id);
+        }
+    }
+
+</script>
+</html>

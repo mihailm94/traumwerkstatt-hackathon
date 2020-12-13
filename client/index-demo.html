@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <title>Traum Werkstatt</title>
+    <style type="text/css">
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #controls {
+            box-sizing: border-box;
+            height: 2em;
+            display: flex;
+            width: 17em;
+            padding: 0.3em;
+            justify-content: space-evenly;
+        }
+        #wrapper {
+            width: 100vw;
+            height: calc(100vh - 2em);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #gradient {
+            width: 88vh;
+            height: 88vh;
+            border-radius: 44vh;
+            transition: background-color 600ms ease-in-out;
+            background-color: #eee;
+        }
+        #gradient.blue {
+            background-color: #44c;
+        }
+        #gradient.green {
+            background-color: #4c4;
+        }
+        #gradient.red {
+            background-color: #c44;
+        }
+    </style>
+</head>
+<body>
+
+This version does not use the real server result. It fakes a different server response for illustration purposes.
+<div id="controls">
+    <button onclick="check_server()">Check server</button>
+    <!--<button onclick="check_server2()">Check server 2</button>-->
+
+    <button onclick="change_class('red')">Red</button>
+    <button onclick="change_class('green')">Green</button>
+    <button onclick="change_class('blue')">Blue</button>
+</div>
+
+<div id="wrapper">
+<div id="gradient">&nbsp;</div>
+</div>
+
+<!--<div id="output"></div>-->
+
+<script type="text/javascript">
+
+    const CHANNEL_ID = 1256278;
+    const URL = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json`
+    const LAST_URL = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json`;
+    const READ_API_KEY = 'I3DZBXU4KBGHBHQ9';
+    const WRITE_API_KEY = '46F35S8XA7HPQ4DH';
+
+    function change_class(className) {
+        document.querySelector('#gradient').classList = [className];
+    }
+
+    function check_server() {
+        let xhr = new XMLHttpRequest();
+        let url = URL + '?api_key=' + READ_API_KEY;
+        xhr.open("GET", url);
+        console.log(url);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                try {
+                    let fake_data = {
+                        "channel":{
+                            "field1":"user_id",
+                            "field2":"target_id",
+                            "field3":"rgb_1",
+                            "field4":"rgb_2",
+                            "field5":"rgb_3",
+                            "created_at":"2020-12-12T09:43:40Z",
+                            "updated_at":"2020-12-12T20:39:41Z",
+                            "last_entry_id":1
+                        },
+                        "feeds": [
+                            {
+                                "created_at":"2020-12-12T22:55:42Z",
+                                "entry_id":1,
+                                "field1":"Mr. Red",
+                                "field2":"red",
+                                "field3":null,
+                                "field4":null,
+                                "field5":null
+                            },
+                            {
+                                "created_at":"2020-12-12T22:55:42Z",
+                                "entry_id":1,
+                                "field1":"Mr. Green",
+                                "field2":"green",
+                                "field3":null,
+                                "field4":null,
+                                "field5":null
+                            },
+                            {
+                                "created_at":"2020-12-12T22:55:42Z",
+                                "entry_id":1,
+                                "field1":"Mr. Blue",
+                                "field2":"blue",
+                                "field3":null,
+                                "field4":null,
+                                "field5":null
+                            },
+                        ]
+                    }
+                    console.log(fake_data)
+                    handle_response(parse_data(JSON.stringify(fake_data)));
+                    // handle_response(parse_data(this.responseText));
+                } catch(e) {
+                    console.error(e);
+                }
+            }
+        };
+        xhr.send();
+    }
+    // function check_server2() {
+    //     let xhr = new XMLHttpRequest();
+    //     let url = LAST_URL + '?api_key=' + READ_API_KEY;
+    //     xhr.open("GET", url);
+    //     console.log(url);
+    //     xhr.onreadystatechange = function() {
+    //         try {
+    //             if (xhr.readyState === XMLHttpRequest.DONE) {
+    //                 handle_response(JSON.parse(this.responseText));
+    //             }
+    //         } catch(e) {
+    //             console.error(e);
+    //         }
+    //     };
+    //     xhr.send();
+    // }
+
+    let counter = 0;
+    function parse_data(data) {
+        let {channel, feeds} = JSON.parse(data);
+        for (let i = 1; i < Object.keys(channel).length; i++) {
+            const field_key = `field${i}`;
+            if (!channel.hasOwnProperty(field_key)) break;
+            const feed_key = channel[field_key];
+            for (let j = 0; j < feeds.length; j++) {
+                let feed = feeds[j];
+                feed[feed_key] = feed[field_key];
+                delete feed[field_key];
+            }
+        }
+        return feeds[counter++] || feeds[feeds.length - 1];
+    }
+
+    function handle_response(data) {
+        change_class(data.target_id)
+    }
+
+</script>
+</body>
+</html>
